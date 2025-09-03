@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Schedules</h3>
+  <a href="{{ url_for('new_schedule') }}" class="btn btn-primary">+ Tambah Schedule</a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-striped mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Entitas</th>
+          <th>Laporan</th>
+          <th>Anchor Due</th>
+          <th>Interval (bulan)</th>
+          <th>Recipients</th>
+          <th>Offsets</th>
+          <th>Aktif</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in schedules %}
+        <tr>
+          <td>{{ s.id }}</td>
+          <td>{{ s.entity_name }}</td>
+          <td>{{ s.report_name }}</td>
+          <td>{{ s.anchor_due_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ s.interval_months }}</td>
+          <td style="max-width:260px">{{ s.recipient_emails }}</td>
+          <td>{{ s.reminder_offsets_days or 'default' }}</td>
+          <td>{{ 'Ya' if s.active else 'Tidak' }}</td>
+          <td>
+            <a href="{{ url_for('edit_schedule', sid=s.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+            <form action="{{ url_for('delete_schedule', sid=s.id) }}" method="post" style="display:inline" onsubmit="return confirm('Hapus schedule ini?')">
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Reminder Logs</h3>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-striped mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Waktu</th>
+          <th>Status</th>
+          <th>Entitas</th>
+          <th>Laporan</th>
+          <th>Due</th>
+          <th>Offset</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in logs %}
+        <tr class="{{ 'table-danger' if l.status=='FAILED' else '' }}">
+          <td>{{ l.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>{{ l.status }}</td>
+          <td>{{ l.schedule.entity_name }}</td>
+          <td>{{ l.schedule.report_name }}</td>
+          <td>{{ l.planned_due_date.strftime('%Y-%m-%d') }}</td>
+          <td>H-{{ l.reminder_offset_days }}</td>
+          <td>{{ l.error_message or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

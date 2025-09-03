@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>{{ 'Edit' if schedule else 'Tambah' }} Schedule</h3>
+<form method="post" class="card p-3">
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Entitas (Bank/Instansi)</label>
+      <input class="form-control" name="entity_name" required value="{{ schedule.entity_name if schedule else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Nama Laporan</label>
+      <input class="form-control" name="report_name" required value="{{ schedule.report_name if schedule else '' }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Deskripsi / Catatan (opsional)</label>
+      <textarea class="form-control" name="description" rows="2">{{ schedule.description if schedule else '' }}</textarea>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Anchor Due Date (pertama kali jatuh tempo)</label>
+      <input type="date" class="form-control" name="anchor_due_date" required value="{{ schedule.anchor_due_date.strftime('%Y-%m-%d') if schedule else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Interval (bulan)</label>
+      <input type="number" min="0" class="form-control" name="interval_months" value="{{ schedule.interval_months if schedule else 0 }}">
+      <div class="form-text">0 = sekali (one-off), 1 = bulanan, 3 = triwulanan, 12 = tahunan, dll.</div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Offsets (H-)</label>
+      <input class="form-control" name="reminder_offsets_days" placeholder="mis. 7,3,1,0" value="{{ schedule.reminder_offsets_days if schedule else '' }}">
+      <div class="form-text">Kosongkan untuk pakai default dari .env</div>
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Email Tujuan (pisahkan dengan koma)</label>
+      <input class="form-control" name="recipient_emails" required placeholder="pic@bank.co.id, compliance@bank.co.id" value="{{ schedule.recipient_emails if schedule else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">CC (opsional, koma)</label>
+      <input class="form-control" name="cc_emails" placeholder="manager@bank.co.id" value="{{ schedule.cc_emails if schedule else '' }}">
+    </div>
+    <div class="col-md-2">
+      <div class="form-check mt-4">
+        <input class="form-check-input" type="checkbox" name="active" id="active" {% if schedule and schedule.active %}checked{% elif not schedule %}checked{% endif %}>
+        <label class="form-check-label" for="active">Aktif</label>
+      </div>
+    </div>
+  </div>
+  <div class="mt-3">
+    <button class="btn btn-primary">Simpan</button>
+    <a href="{{ url_for('list_schedules') }}" class="btn btn-secondary">Batal</a>
+  </div>
+</form>
+{% endblock %}

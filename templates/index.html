@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Dashboard</h3>
+  <a href="{{ url_for('new_schedule') }}" class="btn btn-primary">+ Tambah Schedule</a>
+</div>
+
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header">Upcoming Due</div>
+      <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Entitas</th>
+              <th>Laporan</th>
+              <th>Jatuh Tempo Berikut</th>
+              <th>Offsets</th>
+              <th>Aktif</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td>{{ r.schedule.entity_name }}</td>
+              <td>{{ r.schedule.report_name }}</td>
+              <td>
+                {% if r.next_due %}
+                  {{ r.next_due.strftime('%a, %d %b %Y') }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>{{ r.offsets|join(', ') }}</td>
+              <td>{{ "Ya" if r.schedule.active else "Tidak" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">Recent Logs</div>
+      <div class="card-body" style="max-height: 420px; overflow:auto;">
+        {% if logs %}
+          <ul class="list-group">
+            {% for l in logs %}
+              <li class="list-group-item small">
+                <div><b>{{ l.status }}</b> — {{ l.schedule.report_name }} / {{ l.schedule.entity_name }}</div>
+                <div>Due: {{ l.planned_due_date.strftime('%d %b %Y') }} | Offset: H-{{ l.reminder_offset_days }}</div>
+                <div><i>Sent at</i>: {{ l.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                {% if l.error_message %}
+                <div class="text-danger">Error: {{ l.error_message }}</div>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted mb-0">Belum ada log.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
