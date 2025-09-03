@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Kirim Test Email</h3>
+<form method="post">
+  <div class="mb-3">
+    <label for="to" class="form-label">To</label>
+    <input type="text" class="form-control" id="to" name="to" value="{{ request.form.to or '' }}" required>
+    <div class="form-text">Pisahkan beberapa email dengan koma.</div>
+  </div>
+  <div class="mb-3">
+    <label for="subject" class="form-label">Subject</label>
+    <input type="text" class="form-control" id="subject" name="subject" value="{{ request.form.subject or '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="body" class="form-label">Body</label>
+    <textarea class="form-control" id="body" name="body" rows="6" required>{{ request.form.body or '' }}</textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Send</button>
+</form>
+{% endblock %}

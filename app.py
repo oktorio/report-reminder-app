@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+from markupsafe import escape
 from config import Config
 from models import db, Schedule, ReminderLog
 from scheduler import init_scheduler
 from datetime import datetime, date, timedelta
 from utils import parse_offsets, parse_csv_emails, next_occurrence
+from mailer import send_email
 import pytz
 
 def create_app():
@@ -95,6 +97,22 @@ def register_routes(app: Flask):
     def view_logs():
         logs = ReminderLog.query.order_by(ReminderLog.sent_at.desc()).limit(200).all()
         return render_template("logs.html", logs=logs)
+
+    @app.route("/test-email", methods=["GET", "POST"])
+    def test_email():
+        if request.method == "POST":
+            to_list = parse_csv_emails(request.form.get("to", ""))
+            subject = escape(request.form.get("subject", "").strip())
+            body = escape(request.form.get("body", "").strip())
+            if not to_list:
+                flash("Field 'To' is required", "danger")
+            else:
+                ok, err = send_email(to_list, [], subject, body, body)
+                if ok:
+                    flash("Email terkirim", "success")
+                else:
+                    flash(f"Gagal mengirim email: {err}", "danger")
+        return render_template("test_email.html")
 
 app = create_app()
 
