@@ -101,6 +101,51 @@ def scan_and_send_reminders():
                     db.session.add(log)
                     db.session.commit()
 
+
+def send_today_due_reminders():
+    """Send H reminders for schedules whose due date is today."""
+    tz = pytz.timezone(Config.APP_TZ)
+    today = datetime.now(tz).date()
+
+    with current_app.app_context():
+        schedules = Schedule.query.filter_by(active=True).all()
+        for sch in schedules:
+            due = next_occurrence(sch.anchor_due_date, sch.interval_months, today)
+            if due != today:
+                continue
+
+            # Skip if already logged today
+            exists = (
+                ReminderLog.query.filter_by(
+                    schedule_id=sch.id,
+                    planned_due_date=due,
+                    reminder_offset_days=0,
+                    status="SENT",
+                )
+                .filter(
+                    ReminderLog.sent_at
+                    >= datetime.combine(today, datetime.min.time())
+                )
+                .first()
+            )
+            if exists:
+                continue
+
+            to_emails = parse_csv_emails(sch.recipient_emails)
+            cc_emails = parse_csv_emails(sch.cc_emails or "")
+            subject, html, text = build_email_content(sch, due, 0)
+            ok, err = send_email(to_emails, cc_emails, subject, html, text)
+
+            log = ReminderLog(
+                schedule_id=sch.id,
+                planned_due_date=due,
+                reminder_offset_days=0,
+                status="SENT" if ok else "FAILED",
+                error_message=None if ok else str(err),
+            )
+            db.session.add(log)
+            db.session.commit()
+
 def init_scheduler(app):
     scheduler = BackgroundScheduler(timezone=Config.APP_TZ)
     # Daily job at configured hour/minute

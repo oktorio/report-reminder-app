@@ -40,6 +40,13 @@ def register_routes(app: Flask):
         recent_logs = ReminderLog.query.order_by(ReminderLog.sent_at.desc()).limit(50).all()
         return render_template("index.html", rows=rows, logs=recent_logs, today=today)
 
+    @app.route("/send-today", methods=["POST"])
+    def send_today():
+        from scheduler import send_today_due_reminders
+        send_today_due_reminders()
+        flash("Reminders for today dispatched", "success")
+        return redirect(url_for("index"))
+
     @app.route("/schedules")
     def list_schedules():
         schedules = Schedule.query.order_by(Schedule.entity_name, Schedule.report_name).all()
