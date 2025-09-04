@@ -5,7 +5,13 @@ import pytz
 from flask import current_app
 from config import Config
 from models import db, Schedule, ReminderLog
-from utils import parse_csv_emails, parse_offsets, next_occurrence, should_send_for_due
+from utils import (
+    parse_csv_emails,
+    parse_offsets,
+    next_occurrence,
+    should_send_for_due,
+    generate_upcoming_occurrences,
+)
 from mailer import send_email
 
 def build_email_content(schedule: Schedule, due_date: date, offset_days: int):
@@ -35,6 +41,57 @@ def _get_offsets(schedule: Schedule):
     custom = parse_offsets(schedule.reminder_offsets_days) if schedule.reminder_offsets_days else None
     from config import Config
     return custom or Config.DEFAULT_REMINDER_OFFSETS
+
+
+def scan_missed_reminders(days: int | None = None):
+    """Backfill reminders that should have been sent in the past N days."""
+    tz = pytz.timezone(Config.APP_TZ)
+    today = datetime.now(tz).date()
+    lookback = days or getattr(Config, "MISSED_SCAN_DAYS", 7)
+    window_start = today - timedelta(days=lookback)
+
+    with current_app.app_context():
+        schedules = Schedule.query.filter_by(active=True).all()
+        for sch in schedules:
+            offsets = _get_offsets(sch)
+            if not offsets:
+                continue
+            max_off = max(offsets)
+            due_start = window_start
+            due_end = today + timedelta(days=max_off)
+            dues = generate_upcoming_occurrences(
+                sch.anchor_due_date, sch.interval_months, due_start, due_end
+            )
+            for due in dues:
+                for off in offsets:
+                    send_day = due - timedelta(days=off)
+                    if send_day < window_start or send_day > today:
+                        continue
+                    exists = ReminderLog.query.filter_by(
+                        schedule_id=sch.id,
+                        planned_due_date=due,
+                        reminder_offset_days=off,
+                        status="SENT",
+                    ).first()
+                    if exists:
+                        continue
+
+                    to_emails = parse_csv_emails(sch.recipient_emails)
+                    cc_emails = parse_csv_emails(sch.cc_emails or "")
+                    subject, html, text = build_email_content(sch, due, off)
+                    ok, err = send_email(to_emails, cc_emails, subject, html, text)
+
+                    log = ReminderLog(
+                        schedule_id=sch.id,
+                        planned_due_date=due,
+                        reminder_offset_days=off,
+                        status="SENT" if ok else "FAILED",
+                        error_message=None if ok else str(err),
+                        backfilled=True,
+                        retry_count=0,
+                    )
+                    db.session.add(log)
+                    db.session.commit()
 
 def scan_and_send_reminders():
     tz = pytz.timezone(Config.APP_TZ)
@@ -97,10 +154,37 @@ def scan_and_send_reminders():
                         reminder_offset_days=off,
                         status="SENT" if ok else "FAILED",
                         error_message=None if ok else str(err),
+                        retry_count=0,
                     )
                     db.session.add(log)
                     db.session.commit()
 
+        # Retry failed reminders with exponential backoff
+        now = datetime.utcnow()
+        failed_logs = ReminderLog.query.filter_by(status="FAILED").all()
+        for log in failed_logs:
+            if log.retry_count >= Config.MAX_RETRY_ATTEMPTS:
+                continue
+            delay = Config.RETRY_BACKOFF_BASE_MINUTES * (2 ** log.retry_count)
+            if log.sent_at + timedelta(minutes=delay) > now:
+                continue
+
+            sch = log.schedule
+            to_emails = parse_csv_emails(sch.recipient_emails)
+            cc_emails = parse_csv_emails(sch.cc_emails or "")
+            subject, html, text = build_email_content(
+                sch, log.planned_due_date, log.reminder_offset_days
+            )
+            ok, err = send_email(to_emails, cc_emails, subject, html, text)
+
+            log.retry_count += 1
+            log.sent_at = datetime.utcnow()
+            if ok:
+                log.status = "SENT"
+                log.error_message = None
+            else:
+                log.error_message = str(err)
+            db.session.commit()
 
 def send_today_due_reminders():
     """Send H reminders for schedules whose due date is today."""
@@ -142,6 +226,7 @@ def send_today_due_reminders():
                 reminder_offset_days=0,
                 status="SENT" if ok else "FAILED",
                 error_message=None if ok else str(err),
+                retry_count=0,
             )
             db.session.add(log)
             db.session.commit()
@@ -156,6 +241,7 @@ def init_scheduler(app):
     with app.app_context():
         try:
             scan_and_send_reminders()
+            scan_missed_reminders()
         except Exception as e:
             app.logger.warning(f"Initial scan failed: {e}")
     # Just log immediately that scheduler is running

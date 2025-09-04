@@ -12,6 +12,7 @@
           <th>Laporan</th>
           <th>Due</th>
           <th>Offset</th>
+          <th>Backfilled</th>
           <th>Error</th>
         </tr>
       </thead>
@@ -24,6 +25,7 @@
           <td>{{ l.schedule.report_name }}</td>
           <td>{{ l.planned_due_date.strftime('%Y-%m-%d') }}</td>
           <td>H-{{ l.reminder_offset_days }}</td>
+          <td>{{ 'Yes' if l.backfilled else '' }}</td>
           <td>{{ l.error_message or '' }}</td>
         </tr>
         {% endfor %}

@@ -47,6 +47,13 @@ def register_routes(app: Flask):
         flash("Reminders for today dispatched", "success")
         return redirect(url_for("index"))
 
+    @app.route("/scan-missed", methods=["POST"])
+    def scan_missed():
+        from scheduler import scan_missed_reminders
+        scan_missed_reminders()
+        flash("Missed reminders backfilled", "success")
+        return redirect(url_for("index"))
+
     @app.route("/schedules")
     def list_schedules():
         schedules = Schedule.query.order_by(Schedule.entity_name, Schedule.report_name).all()
