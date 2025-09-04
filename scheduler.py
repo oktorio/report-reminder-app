@@ -88,6 +88,7 @@ def scan_missed_reminders(days: int | None = None):
                         status="SENT" if ok else "FAILED",
                         error_message=None if ok else str(err),
                         backfilled=True,
+                        retry_count=0,
                     )
                     db.session.add(log)
                     db.session.commit()
@@ -153,10 +154,37 @@ def scan_and_send_reminders():
                         reminder_offset_days=off,
                         status="SENT" if ok else "FAILED",
                         error_message=None if ok else str(err),
+                        retry_count=0,
                     )
                     db.session.add(log)
                     db.session.commit()
 
+        # Retry failed reminders with exponential backoff
+        now = datetime.utcnow()
+        failed_logs = ReminderLog.query.filter_by(status="FAILED").all()
+        for log in failed_logs:
+            if log.retry_count >= Config.MAX_RETRY_ATTEMPTS:
+                continue
+            delay = Config.RETRY_BACKOFF_BASE_MINUTES * (2 ** log.retry_count)
+            if log.sent_at + timedelta(minutes=delay) > now:
+                continue
+
+            sch = log.schedule
+            to_emails = parse_csv_emails(sch.recipient_emails)
+            cc_emails = parse_csv_emails(sch.cc_emails or "")
+            subject, html, text = build_email_content(
+                sch, log.planned_due_date, log.reminder_offset_days
+            )
+            ok, err = send_email(to_emails, cc_emails, subject, html, text)
+
+            log.retry_count += 1
+            log.sent_at = datetime.utcnow()
+            if ok:
+                log.status = "SENT"
+                log.error_message = None
+            else:
+                log.error_message = str(err)
+            db.session.commit()
 
 def send_today_due_reminders():
     """Send H reminders for schedules whose due date is today."""
@@ -198,6 +226,7 @@ def send_today_due_reminders():
                 reminder_offset_days=0,
                 status="SENT" if ok else "FAILED",
                 error_message=None if ok else str(err),
+                retry_count=0,
             )
             db.session.add(log)
             db.session.commit()

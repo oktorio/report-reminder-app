@@ -35,5 +35,6 @@ class ReminderLog(db.Model):
     error_message = db.Column(db.Text, nullable=True)
     sent_at = db.Column(db.DateTime, default=datetime.utcnow)
     backfilled = db.Column(db.Boolean, nullable=False, default=False)
+    retry_count = db.Column(db.Integer, nullable=False, default=0)
 
     schedule = db.relationship("Schedule", backref="reminders")
