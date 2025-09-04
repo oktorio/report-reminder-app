@@ -79,7 +79,7 @@ def scan_missed_reminders(days: int | None = None):
                     to_emails = parse_csv_emails(sch.recipient_emails)
                     cc_emails = parse_csv_emails(sch.cc_emails or "")
                     subject, html, text = build_email_content(sch, due, off)
-                    ok, err = send_email(to_emails, cc_emails, subject, html, text)
+                    ok, err = send_email([], cc_emails, subject, html, text, bcc_emails=to_emails)
 
                     log = ReminderLog(
                         schedule_id=sch.id,
@@ -146,7 +146,7 @@ def scan_and_send_reminders():
                     to_emails = parse_csv_emails(sch.recipient_emails)
                     cc_emails = parse_csv_emails(sch.cc_emails or "")
                     subject, html, text = build_email_content(sch, d, off)
-                    ok, err = send_email(to_emails, cc_emails, subject, html, text)
+                    ok, err = send_email([], cc_emails, subject, html, text, bcc_emails=to_emails)
 
                     log = ReminderLog(
                         schedule_id=sch.id,
@@ -175,7 +175,7 @@ def scan_and_send_reminders():
             subject, html, text = build_email_content(
                 sch, log.planned_due_date, log.reminder_offset_days
             )
-            ok, err = send_email(to_emails, cc_emails, subject, html, text)
+            ok, err = send_email([], cc_emails, subject, html, text, bcc_emails=to_emails)
 
             log.retry_count += 1
             log.sent_at = datetime.utcnow()
@@ -218,7 +218,7 @@ def send_today_due_reminders():
             to_emails = parse_csv_emails(sch.recipient_emails)
             cc_emails = parse_csv_emails(sch.cc_emails or "")
             subject, html, text = build_email_content(sch, due, 0)
-            ok, err = send_email(to_emails, cc_emails, subject, html, text)
+            ok, err = send_email([], cc_emails, subject, html, text, bcc_emails=to_emails)
 
             log = ReminderLog(
                 schedule_id=sch.id,
