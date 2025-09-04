@@ -6,6 +6,9 @@
     <form method="post" action="{{ url_for('send_today') }}" class="d-inline">
       <button class="btn btn-success">Send Today Reminders</button>
     </form>
+    <form method="post" action="{{ url_for('scan_missed') }}" class="d-inline ms-2">
+      <button class="btn btn-warning">Scan Missed</button>
+    </form>
     <a href="{{ url_for('new_schedule') }}" class="btn btn-primary">+ Tambah Schedule</a>
   </div>
 </div>

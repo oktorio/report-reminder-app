@@ -26,3 +26,4 @@ class Config:
     DEFAULT_REMINDER_OFFSETS = [int(x.strip()) for x in os.getenv("DEFAULT_REMINDER_OFFSETS", "7,3,1,0").split(",") if x.strip()]
     DAILY_JOB_HOUR = int(os.getenv("DAILY_JOB_HOUR", "8"))
     DAILY_JOB_MINUTE = int(os.getenv("DAILY_JOB_MINUTE", "0"))
+    MISSED_SCAN_DAYS = int(os.getenv("MISSED_SCAN_DAYS", "7"))
