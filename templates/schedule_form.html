@@ -35,7 +35,11 @@
     </div>
     <div class="col-md-4">
       <label class="form-label">CC (opsional, koma)</label>
-      <input class="form-control" name="cc_emails" placeholder="manager@bank.co.id" value="{{ schedule.cc_emails if schedule else '' }}">
+      {% if schedule %}
+        <input class="form-control" name="cc_emails" placeholder="manager@bank.co.id" value="{{ schedule.cc_emails }}">
+      {% else %}
+        <input class="form-control" name="cc_emails" placeholder="manager@bank.co.id">
+      {% endif %}
     </div>
     <div class="col-md-2">
       <div class="form-check mt-4">
