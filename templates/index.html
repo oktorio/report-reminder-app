@@ -2,7 +2,12 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3>Dashboard</h3>
-  <a href="{{ url_for('new_schedule') }}" class="btn btn-primary">+ Tambah Schedule</a>
+  <div>
+    <form method="post" action="{{ url_for('send_today') }}" class="d-inline">
+      <button class="btn btn-success">Send Today Reminders</button>
+    </form>
+    <a href="{{ url_for('new_schedule') }}" class="btn btn-primary">+ Tambah Schedule</a>
+  </div>
 </div>
 
 <div class="row">
