@@ -27,3 +27,9 @@ class Config:
     DAILY_JOB_HOUR = int(os.getenv("DAILY_JOB_HOUR", "8"))
     DAILY_JOB_MINUTE = int(os.getenv("DAILY_JOB_MINUTE", "0"))
     MISSED_SCAN_DAYS = int(os.getenv("MISSED_SCAN_DAYS", "7"))
+
+    # Retry logic for failed reminders
+    MAX_RETRY_ATTEMPTS = int(os.getenv("MAX_RETRY_ATTEMPTS", "3"))
+    RETRY_BACKOFF_BASE_MINUTES = int(
+        os.getenv("RETRY_BACKOFF_BASE_MINUTES", "15")
+    )
