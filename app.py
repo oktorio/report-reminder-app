@@ -121,7 +121,7 @@ def register_routes(app: Flask):
             if not to_list:
                 flash("Field 'To' is required", "danger")
             else:
-                ok, err = send_email(to_list, [], subject, body, body)
+                ok, err = send_email([], [], subject, body, body, bcc_emails=to_list)
                 if ok:
                     flash("Email terkirim", "success")
                 else:
